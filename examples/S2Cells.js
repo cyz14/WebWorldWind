@@ -55,69 +55,81 @@ requirejs(['./WorldWindShim',
         pathsLayer.displayName = "Paths";
 
         var height = 1e4;
-        
-        var dataSource = "./data/s2level5_cells.txt";
-        var httpRequest = new XMLHttpRequest();
-        httpRequest.onreadystatechange = function () {
-            if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                // Everything is good, the response was received.
-                if (httpRequest.status === 200) {
-                    // Perfect!
-                    var response = httpRequest.response;
-                    var level = response['level'];
-                    var ncells = response['ncells'];
-                    var points = response['points'];
-                    console.log("Level:", level);
-                    
-                    for (var i = 0, cur = 0; i < ncells; i++) {
-                        var boundary = [];
-                        boundary.push(new WorldWind.Position(points[cur][0], points[cur][1], height));
-                        boundary.push(new WorldWind.Position(points[cur+1][0], points[cur+1][1], height));
-                        boundary.push(new WorldWind.Position(points[cur+2][0], points[cur+2][1], height));
-                        boundary.push(new WorldWind.Position(points[cur+3][0], points[cur+3][1], height));
-                        cur+=4;
+        var level_select= $("#levelSelect label.active input").val();
+        var dataSource = "/examples/data/s2level" + level_select + "_cells.json";
+        $("#levelSelect label").on('click', function() {
+            $(this).addClass('active').siblings().removeClass('active');
+            level_select = $("#levelSelect label.active input").val();
+            dataSource = "/examples/data/s2level" + level_select + "_cells.json";
+            pathsLayer.removeAllRenderables();
+            polygonsLayer.removeAllRenderables();
+            loadData();
+            wwd.redraw();
+        });
+        var loadData = function() {
+            var httpRequest = new XMLHttpRequest();
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    // Everything is good, the response was received.
+                    if (httpRequest.status === 200) {
+                        // Perfect!
+                        var response = httpRequest.response;
+                        var level = response['level'];
+                        var ncells = response['ncells'];
+                        var points = response['points'];
+                        console.log("Level:", level);
+                        
+                        for (var i = 0, cur = 0; i < ncells; i++) {
+                            var boundary = [];
+                            boundary.push(new WorldWind.Position(points[cur][0], points[cur][1], height));
+                            boundary.push(new WorldWind.Position(points[cur+1][0], points[cur+1][1], height));
+                            boundary.push(new WorldWind.Position(points[cur+2][0], points[cur+2][1], height));
+                            boundary.push(new WorldWind.Position(points[cur+3][0], points[cur+3][1], height));
+                            cur+=4;
 
-                        var path = new WorldWind.Path(boundary, null);
-                        path.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
-                        path.followTerrain = true;
-                        path.extrude = true;
-                        path.useSurfaceShapeFor2D = true;
+                            var path = new WorldWind.Path(boundary, null);
+                            path.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
+                            path.followTerrain = true;
+                            path.extrude = true;
+                            path.useSurfaceShapeFor2D = true;
 
-                        // Create and assign the path's attributes.
-                        var pathAttributes = new WorldWind.ShapeAttributes(null);
-                        pathAttributes.outlineColor = WorldWind.Color.BLUE;
-                        pathAttributes.interiorColor = new WorldWind.Color(0, 1, 1, 0.5);
-                        pathAttributes.drawVerticals = path.extrude; //Draw verticals only when extruding.
-                        path.attributes = pathAttributes;
-                        pathsLayer.addRenderable(path);
+                            // Create and assign the path's attributes.
+                            var pathAttributes = new WorldWind.ShapeAttributes(null);
+                            pathAttributes.outlineColor = WorldWind.Color.WHITE;
+                            pathAttributes.interiorColor = new WorldWind.Color(0, 1, 1, 0.5);
+                            pathAttributes.drawVerticals = path.extrude; //Draw verticals only when extruding.
+                            path.attributes = pathAttributes;
+                            pathsLayer.addRenderable(path);
 
-                        var polygonAttributes = new WorldWind.ShapeAttributes(null);
-                        polygonAttributes.interiorColor = WorldWind.Color.WHITE;
-                        polygonAttributes.drawVerticals = true;
-                        polygonAttributes.applyLighting = true;
+                            var polygonAttributes = new WorldWind.ShapeAttributes(null);
+                            polygonAttributes.interiorColor = WorldWind.Color.WHITE;
+                            polygonAttributes.drawVerticals = true;
+                            polygonAttributes.applyLighting = true;
 
-                        // Create the polygon and assign its attributes.
-                        var polygon = new WorldWind.Polygon([boundary], null);
-                        polygon.altitudeMode = WorldWind.ABSOLUTE;
-                        polygon.extrude = polygonAttributes.drawVerticals;
-                        polygon.attributes = polygonAttributes;
-                        // Add the polygon to the layer and the layer to the WorldWindow's layer list.
-                        polygonsLayer.addRenderable(polygon);
+                            // Create the polygon and assign its attributes.
+                            var polygon = new WorldWind.Polygon([boundary], null);
+                            polygon.altitudeMode = WorldWind.ABSOLUTE;
+                            polygon.extrude = polygonAttributes.drawVerticals;
+                            polygon.attributes = polygonAttributes;
+                            // Add the polygon to the layer and the layer to the WorldWindow's layer list.
+                            polygonsLayer.addRenderable(polygon);
+                        }
+                    } else {
+                        // There was a problem with the request.
+                        // For example, the response may have a 404 (Not Found)
+                        // or 500 (Internal Server Error) response code.
+                        console.log('response status:', httpRequest.status);
                     }
                 } else {
-                    // There was a problem with the request.
-                    // For example, the response may have a 404 (Not Found)
-                    // or 500 (Internal Server Error) response code.
-                    console.log('response status:', httpRequest.status);
+                    // Not ready yet.
                 }
-            } else {
-                // Not ready yet.
-            }
+            };
+            httpRequest.open('GET', dataSource, true);
+            httpRequest.responseType = 'json';
+            httpRequest.send();
         };
-        httpRequest.open('GET', dataSource, true);
-        httpRequest.responseType = 'json';
-        httpRequest.send();
 
+        loadData();
         wwd.addLayer(pathsLayer);
         wwd.addLayer(polygonsLayer);
         wwd.redraw();
