@@ -18,9 +18,10 @@
  * Illustrates how to display and pick Polygons.
  */
 requirejs(['./WorldWindShim',
-        './LayerManager'],
-    function (WorldWind,
-              LayerManager) {
+        './LayerManager'
+    ],
+    function(WorldWind,
+        LayerManager) {
         "use strict";
 
         // Tell WorldWind to log only warnings and errors.
@@ -32,13 +33,13 @@ requirejs(['./WorldWindShim',
         // Create and add layers to the WorldWindow.
         var layers = [
             // Imagery layers.
-            {layer: new WorldWind.BMNGLayer(), enabled: true},
-            {layer: new WorldWind.BMNGLandsatLayer(), enabled: false},
-            {layer: new WorldWind.BingAerialWithLabelsLayer(null), enabled: true},
+            { layer: new WorldWind.BMNGLayer(), enabled: true },
+            { layer: new WorldWind.BMNGLandsatLayer(), enabled: false },
+            { layer: new WorldWind.BingAerialWithLabelsLayer(null), enabled: true },
             // WorldWindow UI layers.
-            {layer: new WorldWind.CompassLayer(), enabled: true},
-            {layer: new WorldWind.CoordinatesDisplayLayer(wwd), enabled: true},
-            {layer: new WorldWind.ViewControlsLayer(wwd), enabled: true}
+            { layer: new WorldWind.CompassLayer(), enabled: true },
+            { layer: new WorldWind.CoordinatesDisplayLayer(wwd), enabled: true },
+            { layer: new WorldWind.ViewControlsLayer(wwd), enabled: true }
         ];
 
         for (var l = 0; l < layers.length; l++) {
@@ -55,11 +56,22 @@ requirejs(['./WorldWindShim',
         pathsLayer.displayName = "Paths";
 
         var height = 1e4;
-        var level_select= $("#levelSelect label.active input").val();
+
+        var precision = $("#levelSelect");
+        for (var i = 1; i <= 4; i++) {
+            var precItem = $('<a class="list-group-item list-group-item-action" >' + i + '</a>');
+            precision.append(precItem);
+            if (i == 2) {
+                precItem.addClass("active");
+            }
+        }
+
+        var level_select = $("#levelSelect a.active").text();
         var dataSource = "/examples/data/s2level" + level_select + "_cells.json";
-        $("#levelSelect label").on('click', function() {
-            $(this).addClass('active').siblings().removeClass('active');
-            level_select = $("#levelSelect label.active input").val();
+        $("#levelSelect a").on('click', function() {
+            $(this).siblings().removeClass('active');
+            $(this).addClass('active');
+            level_select = $("#levelSelect a.active").text();
             dataSource = "/examples/data/s2level" + level_select + "_cells.json";
             pathsLayer.removeAllRenderables();
             polygonsLayer.removeAllRenderables();
@@ -68,7 +80,7 @@ requirejs(['./WorldWindShim',
         });
         var loadData = function() {
             var httpRequest = new XMLHttpRequest();
-            httpRequest.onreadystatechange = function () {
+            httpRequest.onreadystatechange = function() {
                 if (httpRequest.readyState === XMLHttpRequest.DONE) {
                     // Everything is good, the response was received.
                     if (httpRequest.status === 200) {
@@ -78,14 +90,14 @@ requirejs(['./WorldWindShim',
                         var ncells = response['ncells'];
                         var points = response['points'];
                         console.log("Level:", level);
-                        
+
                         for (var i = 0, cur = 0; i < ncells; i++) {
                             var boundary = [];
                             boundary.push(new WorldWind.Position(points[cur][0], points[cur][1], height));
-                            boundary.push(new WorldWind.Position(points[cur+1][0], points[cur+1][1], height));
-                            boundary.push(new WorldWind.Position(points[cur+2][0], points[cur+2][1], height));
-                            boundary.push(new WorldWind.Position(points[cur+3][0], points[cur+3][1], height));
-                            cur+=4;
+                            boundary.push(new WorldWind.Position(points[cur + 1][0], points[cur + 1][1], height));
+                            boundary.push(new WorldWind.Position(points[cur + 2][0], points[cur + 2][1], height));
+                            boundary.push(new WorldWind.Position(points[cur + 3][0], points[cur + 3][1], height));
+                            cur += 4;
 
                             var path = new WorldWind.Path(boundary, null);
                             path.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
@@ -131,12 +143,14 @@ requirejs(['./WorldWindShim',
 
         loadData();
         wwd.addLayer(pathsLayer);
+        polygonsLayer.enabled = false;
         wwd.addLayer(polygonsLayer);
         wwd.redraw();
-        
+
         // Now set up to handle highlighting.
         var highlightController = new WorldWind.HighlightController(wwd);
 
         // Create a layer manager for controlling layer visibility.
         var layerManager = new LayerManager(wwd);
+
     });
