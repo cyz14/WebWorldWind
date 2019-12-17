@@ -105,8 +105,11 @@ requirejs(['./WorldWindShim',
                             path.extrude = true;
                             path.useSurfaceShapeFor2D = true;
 
+                            var colors = [WorldWind.Color.WHITE, WorldWind.Color.RED, WorldWind.Color.BLUE, WorldWind.Color.GREEN];
                             // Create and assign the path's attributes.
                             var pathAttributes = new WorldWind.ShapeAttributes(null);
+                            // var imod4 = i % 4;
+                            // pathAttributes.outlineColor = colors[imod4];
                             pathAttributes.outlineColor = WorldWind.Color.WHITE;
                             pathAttributes.interiorColor = new WorldWind.Color(0, 1, 1, 0.5);
                             pathAttributes.drawVerticals = path.extrude; //Draw verticals only when extruding.
